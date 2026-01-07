@@ -110,7 +110,244 @@ Final Encrypted password: GraapDpeam
 - Explains Caesar, Vigenère, Affine, and Hash
 
 
-## PART 3: CHOOSING ENCRYPTION METHOD
+## PART 3: BUSINESS APPLICATION INTEGRATION
+
+### Overview
+The passwordManagement.cpp file provides complete encryption for a business inventory management system, securing both usernames and passwords using multiple encryption techniques.
+
+### Implementation in Existing Application
+
+#### Step 1: Include the Header
+```cpp
+#include "crypto_functions.h"
+```
+
+#### Step 2: Set Up File Constants
+```cpp
+const string userFile = "users.txt";
+const string signUpFile = "signUpData.txt";
+const string adminFile = "admin.txt";
+```
+
+#### Step 3: Store User Data Securely
+```cpp
+// Encrypt and store user data
+int currentUsers = 3;
+string userNames[] = {"John Doe", "Jane Smith", "Bob Wilson"};
+string userPasswords[] = {"hash123", "hash456", "hash789"};
+
+storeUserDataEnc(currentUsers, userNames, userPasswords);
+// Users are now stored with encrypted usernames and hashed passwords
+```
+
+**What happens:**
+- Spaces in usernames are replaced with 'X' (e.g., "John Doe" → "JohnXDoe")
+- Usernames are encrypted using Affine cipher (a=5, b=8)
+- Passwords are already hashed before this function
+- Data is stored in format: `encryptedUsername,hashedPassword`
+
+#### Step 4: Verify User Login
+```cpp
+string currentUser;
+string username = "John Doe";
+string password = "userPassword123";
+
+if (verifyUser(currentUser, username, password)) {
+    cout << "Welcome back, " << currentUser << "!" << endl;
+    // Proceed to application
+} else {
+    cout << "Invalid credentials!" << endl;
+}
+```
+
+**What happens:**
+- Password is hashed automatically
+- File is searched for matching encrypted username
+- Username is decrypted and spaces are restored
+- Hashed passwords are compared
+- If match found, `currentUser` contains the decrypted username
+
+#### Step 5: Admin Authentication
+```cpp
+string adminPassword = "AdminSecure@2025";
+
+if (verifyAdmin(adminPassword)) {
+    cout << "Admin access granted" << endl;
+    // Show admin panel
+} else {
+    cout << "Admin authentication failed" << endl;
+}
+```
+
+**What happens:**
+- Password is double-hashed: `hash(hash(password))`
+- Provides extra security layer for admin account
+- Compared with stored double-hash in admin.txt
+
+#### Step 6: Handle Signup Requests
+```cpp
+// Store signup request (encrypted separately from regular users)
+int signUpRequests = 2;
+string signUpRequestData[100][2];
+signUpRequestData[0][0] = "New User";
+signUpRequestData[0][1] = "hash123";
+signUpRequestData[1][0] = "Another User";
+signUpRequestData[1][1] = "hash456";
+
+storeSignUpDataEnc(signUpRequests, signUpRequestData);
+
+// Later, admin loads and reviews signup requests
+loadSignUpDataDec(signUpRequests, signUpRequestData);
+for(int i = 0; i < signUpRequests; i++) {
+    cout << "Signup Request: " << signUpRequestData[i][0] << endl;
+    // Admin can approve or reject
+}
+```
+
+**What happens:**
+- Signup requests use different Affine keys (a=9, b=15)
+- Keeps signup data separate from active users
+- Admin can decrypt and review before approving
+
+#### Step 7: Check Username Availability
+```cpp
+string newUsername = "John Doe";
+
+if (checkUserExists(newUsername)) {
+    cout << "Username already taken. Please choose another." << endl;
+} else {
+    cout << "Username available!" << endl;
+    // Proceed with registration
+}
+```
+
+**What happens:**
+- Searches encrypted data without exposing plain text
+- Decrypts each stored username temporarily for comparison
+- Returns true if username exists, false otherwise
+
+### Complete Registration Flow Example
+
+```cpp
+// User Registration Function
+bool registerNewUser(string username, string password) {
+    // Step 1: Check if username exists
+    if (checkUserExists(username)) {
+        cout << "Username already exists!" << endl;
+        return false;
+    }
+    
+    // Step 2: Hash the password
+    string hashedPassword = hashPassword(password);
+    
+    // Step 3: Add to signup requests
+    int signUpRequests;
+    string signUpRequestData[100][2];
+    
+    // Load existing requests
+    loadSignUpDataDec(signUpRequests, signUpRequestData);
+    
+    // Add new request
+    signUpRequestData[signUpRequests][0] = username;
+    signUpRequestData[signUpRequests][1] = hashedPassword;
+    signUpRequests++;
+    
+    // Save encrypted signup data
+    storeSignUpDataEnc(signUpRequests, signUpRequestData);
+    
+    cout << "Registration request submitted!" << endl;
+    return true;
+}
+
+// Admin Approval Function
+void approveSignup(int requestIndex) {
+    int signUpRequests, currentUsers;
+    string signUpRequestData[100][2];
+    string userNames[100], userPasswords[100];
+    
+    // Load signup requests
+    loadSignUpDataDec(signUpRequests, signUpRequestData);
+    
+    // Load current users
+    loadUserDataDec(currentUsers, userNames, userPasswords);
+    
+    // Move approved user to main users
+    userNames[currentUsers] = signUpRequestData[requestIndex][0];
+    userPasswords[currentUsers] = signUpRequestData[requestIndex][1];
+    currentUsers++;
+    
+    // Remove from signup requests
+    for(int i = requestIndex; i < signUpRequests - 1; i++) {
+        signUpRequestData[i][0] = signUpRequestData[i+1][0];
+        signUpRequestData[i][1] = signUpRequestData[i+1][1];
+    }
+    signUpRequests--;
+    
+    // Save updated data
+    storeUserDataEnc(currentUsers, userNames, userPasswords);
+    storeSignUpDataEnc(signUpRequests, signUpRequestData);
+    
+    cout << "User approved successfully!" << endl;
+}
+```
+
+### Security Best Practices
+
+1. **Always Hash Before Storage**: Hash passwords before calling `storeUserDataEnc()`
+2. **Different Keys for Different Data**: Signup requests use different keys than regular users
+3. **Admin Extra Protection**: Double-hash admin passwords
+4. **Never Store Plain Text**: All data is encrypted before writing to files
+5. **Handle Spaces Properly**: System automatically handles spaces in usernames
+
+### File Format Reference
+
+**users.txt Format:**
+```
+<number_of_users>
+<encrypted_username>,<hashed_password>
+<encrypted_username>,<hashed_password>
+...
+```
+
+**Example:**
+```
+3
+RcllaOaplx,972352
+Pcala,876543
+Pcalancrclqh,765432
+```
+
+**signUpData.txt Format:**
+```
+<number_of_requests>
+<encrypted_username>,<hashed_password>
+<encrypted_username>,<hashed_password>
+...
+```
+
+**admin.txt Format:**
+```
+<double_hashed_admin_password>
+```
+
+### Troubleshooting
+
+**Problem: Verification fails with correct password**
+- Ensure password was hashed before storage
+- Check that the correct encryption method is used
+- Verify file format is correct
+
+**Problem: Usernames with spaces not working**
+- System automatically handles spaces (converts to 'X')
+- Ensure you're not manually modifying encrypted data
+
+**Problem: Admin login not working**
+- Remember admin password is double-hashed
+- Check admin.txt contains the correct double-hash
+
+---
+
+## PART 4: CHOOSING ENCRYPTION METHOD
 
 ### When to Use Each Method:
 

@@ -52,6 +52,18 @@ Main program with:
 - Ability to join enciption techniques
 - User-friendly interface
 
+### passwordManagement.cpp
+Business application integration with:
+- **storeUserDataEnc()**: Encrypts usernames (Affine cipher: a=5, b=8) and passwords (hashed) before storing in users.txt
+- **verifyUser()**: Decrypts stored usernames and compares hashed passwords for authentication
+- **verifyAdmin()**: Double-hashes admin password for additional security layer
+- **storeSignUpDataEnc()**: Encrypts signup requests using different Affine keys (a=9, b=15) to segregate from regular users
+- **loadSignUpDataDec()**: Decrypts signup data for admin review and approval
+- **checkUserExists()**: Verifies if username already exists without storing or exposing plain text
+- **loadUserDataDec()**: Loads and decrypts user data for system operations and management
+
+**Note**: Username encryption includes space handling - spaces are replaced with 'X' before encryption and restored after decryption to maintain username integrity.
+
 ---
 
 ## How to Compile and Run
@@ -113,7 +125,74 @@ Output: 972352
 2. **Password Storage:** Securely store passwords in encrypted form
 3. **Interactive Menu:** Easy-to-use interface for testing all features
 4. **Demonstrations:** Built-in demos for each cryptographic method
-4. **Explanations:** Built-in explanations about each cryptographic method
+5. **Explanations:** Built-in explanations about each cryptographic method
+6. **Business Application Integration:** Real-world implementation in inventory management system
+
+---
+
+## Business Application Integration
+
+The passwordManagement.cpp file provides a complete security layer for a business inventory management system:
+
+### User Management
+- **Users File (users.txt)**: Stores encrypted usernames and hashed passwords
+- **Signup File (signUpData.txt)**: Stores pending signup requests with encryption
+- **Admin File (admin.txt)**: Stores double-hashed admin password for extra security
+
+### Security Features
+1. **Dual Encryption Keys**: Different Affine cipher keys for users (a=5, b=8) and signup requests (a=9, b=15)
+2. **Double Hashing**: Admin passwords are hashed twice for additional protection
+3. **Space Handling**: Usernames with spaces are encrypted properly (spaces → 'X' → encrypted → restored)
+4. **No Plain Text**: All credentials are encrypted before storage; never stored in readable format
+
+### Function Overview
+
+```cpp
+// Store current users with encryption
+storeUserDataEnc(currentUsers, userNames[], userPasswords[]);
+
+// Verify user login
+string currentUser;
+if (verifyUser(currentUser, "username", "password")) {
+    cout << "Login successful for: " << currentUser << endl;
+}
+
+// Verify admin login with double-hash
+if (verifyAdmin("adminPassword")) {
+    cout << "Admin access granted" << endl;
+}
+
+// Store signup request
+storeSignUpDataEnc(signUpRequests, signUpRequestData[][2]);
+
+// Load signup requests for admin review
+loadSignUpDataDec(signUpRequests, signUpRequestData[][2]);
+
+// Check if username exists
+if (checkUserExists("username")) {
+    cout << "Username already taken" << endl;
+}
+
+// Load all user data
+loadUserDataDec(currentUsers, userNames[], userPasswords[]);
+```
+
+### File Format Examples
+
+**users.txt:**
+```
+3
+RcllaOaplx,972352,hash
+Pcala,876543,hash
+Pcalancrclqh,765432,hash
+```
+
+**signUpData.txt:**
+```
+2
+Jhgcrlmrmlq,972352,hash
+Bhdrqlm,876543,hash
+```
 
 ---
 
